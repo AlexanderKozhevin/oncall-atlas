@@ -1,0 +1,12 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const A=require('./model.js');
+test('rotation follows day and week cadence',()=>{assert.equal(A.resolve({day:1}).person,'Борис');assert.equal(A.resolve({day:2,cadence:7}).person,'Анна');});
+test('weekend wins; override is start inclusive and end exclusive',()=>{assert.equal(A.resolve({day:5}).person,'Глеб');assert.equal(A.resolve({day:2,hour:12,override:true}).person,'Илья');assert.equal(A.resolve({day:2,hour:16,override:true}).person,'Вера');});
+test('no layer means no assignee; override can fill a gap',()=>{assert.equal(A.resolve({day:0,base:false,weekend:false}).person,null);assert.equal(A.resolve({day:2,hour:13,base:false,override:true}).person,'Илья');});
+test('replacement preserves unaffected hours',()=>{assert.deepEqual(A.segments(12,16,true).map(s=>[s.start,s.end,s.person]),[[9,12,'Анна'],[12,16,'Илья'],[16,18,'Анна']]);});
+test('policy exhausts without resolving',()=>{let s=A.initial();for(let i=0;i<3;i++)s=A.advance(s);assert.equal(s.minute,30);assert.equal(s.done,true);assert.equal(s.status,'firing');});
+test('repeat means an extra whole cycle',()=>{let s=A.initial('policy',1);for(let i=0;i<6;i++)s=A.advance(s);assert.equal(s.minute,60);assert.equal(s.cycle,1);assert.equal(s.done,true);});
+test('ACK stops progression and differs from resolve',()=>{let s=A.accept(A.advance(A.initial()));assert.equal(A.advance(s).minute,5);assert.equal(s.status,'acknowledged');assert.equal(A.close(s).status,'resolved');});
+test('policy assignment proceeds after delivery failure',()=>{let s=A.advance(A.initial(),{delivery:false});assert.equal(s.target,1);assert.match(s.events.at(-1).text,/Сбой доставки/);});
+test('simple mode sends two reminders then escalates at next due check',()=>{let s=A.initial('simple');s=A.advance(s);s=A.advance(s);assert.equal(s.target,0);assert.equal(s.count,2);s=A.advance(s);assert.equal(s.minute,15);assert.equal(s.target,1);assert.equal(s.count,0);});
+test('disabled or unsuccessful reminders do not progress simple counter',()=>{const s=A.initial('simple');assert.equal(A.advance(s,{interval:0}).minute,0);assert.equal(A.advance(s,{delivery:false}).count,0);});
+test('unavailable backup never becomes proposed coverage',()=>{assert.equal(A.candidate(true,true,false),null);assert.equal(A.candidate(true,false,true),null);assert.equal(A.candidate(true,false,false),'Борис');});
