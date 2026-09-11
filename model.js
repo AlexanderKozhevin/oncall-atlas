@@ -22,8 +22,8 @@ function advance(s,{delivery=true,interval=5,threshold=2}={}){
  }else{
   if(interval===0)return {...n,events:[...n.events,{minute:n.minute,text:'Напоминания отключены. Простой режим не продвигается.'}]};
   n.minute+=interval;
-  if(!delivery){text='Нет успешной доставки. Счётчик напоминаний не увеличен.';}
-  else if(s.count>=threshold){n.target=(s.target+1)%3;n.count=0;text='Инцидент передан: '+people[n.target]+'. Календарь дежурств не изменился.';}
+  if(s.count>=threshold){n.target=(s.target+1)%3;n.count=0;text='Инцидент передан: '+people[n.target]+'. Календарь дежурств не изменился. '+(delivery?'Уведомление доставлено.':'Сбой доставки уведомления об эскалации.');}
+  else if(!delivery){text='Нет успешной доставки. Счётчик напоминаний не увеличен.';}
   else{n.count++;text='Напоминание '+n.count+' доставлено: '+people[n.target]+'.';}
  }
  n.events.push({minute:n.minute,text});return n;

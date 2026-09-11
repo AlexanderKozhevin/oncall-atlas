@@ -10,3 +10,5 @@ test('policy assignment proceeds after delivery failure',()=>{let s=A.advance(A.
 test('simple mode sends two reminders then escalates at next due check',()=>{let s=A.initial('simple');s=A.advance(s);s=A.advance(s);assert.equal(s.target,0);assert.equal(s.count,2);s=A.advance(s);assert.equal(s.minute,15);assert.equal(s.target,1);assert.equal(s.count,0);});
 test('disabled or unsuccessful reminders do not progress simple counter',()=>{const s=A.initial('simple');assert.equal(A.advance(s,{interval:0}).minute,0);assert.equal(A.advance(s,{delivery:false}).count,0);});
 test('unavailable backup never becomes proposed coverage',()=>{assert.equal(A.candidate(true,true,false),null);assert.equal(A.candidate(true,false,true),null);assert.equal(A.candidate(true,false,false),'Борис');});
+
+test('simple assignment after reached threshold survives delivery failure',()=>{let s=A.advance(A.advance(A.initial('simple')));s=A.advance(s,{delivery:false});assert.equal(s.target,1);assert.equal(s.count,0);assert.match(s.events.at(-1).text,/Сбой доставки/);});
